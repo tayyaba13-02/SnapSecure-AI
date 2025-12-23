@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -42,7 +42,7 @@ async def root():
     return {"message": "SnapSecure AI API is running"}
 
 @app.post("/analyze")
-async def analyze_screenshot(file: UploadFile = File(...)):
+async def analyze_screenshot(request: Request, file: UploadFile = File(...)):
     try:
         # 1. Save uploaded file
         filename = f"{uuid.uuid4()}_{file.filename}"
@@ -67,8 +67,9 @@ async def analyze_screenshot(file: UploadFile = File(...)):
             raise HTTPException(status_code=500, detail="Redaction failed")
 
         # 5. Return result
-        # Construct URL (assuming localhost:8000 for now, ideally use request.base_url)
-        processed_url = f"http://localhost:8001/processed/{processed_filename}"
+        # Construct URL dynamically using the request's base URL
+        base_url = str(request.base_url).rstrip("/")
+        processed_url = f"{base_url}/processed/{processed_filename}"
         
         return {
             "filename": filename,
@@ -85,4 +86,5 @@ async def analyze_screenshot(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)

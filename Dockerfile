@@ -45,9 +45,8 @@ COPY --from=build-frontend /app/frontend/dist /app/frontend/dist
 # Define environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Expose the port (Render will override the PORT env var, but this documents intent)
-EXPOSE 8001
+# Expose the port (Hugging Face Spaces uses 7860)
+EXPOSE 7860
 
 # Run the application
-# We use python main.py so that the script's logic to read os.environ["PORT"] works
 CMD ["python", "main.py"]

@@ -48,4 +48,4 @@ ENV PATH=/home/user/.local/bin:$PATH
 EXPOSE 7860
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

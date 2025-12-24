@@ -1,3 +1,12 @@
+---
+title: SnapSecureAI
+emoji: 🔒
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # SnapSecure AI 🛡️
 
 **SnapSecure AI** is a professional, privacy-focused web application designed to surgically detect and blur sensitive data in screenshots. Whether it's an email, a phone number, or a government ID, SnapSecure AI ensures your personal information stays private before you share it.

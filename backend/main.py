@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
 import os
 import shutil
 import uuid
@@ -37,9 +38,9 @@ ocr_engine = OCREngine()
 detector = SensitiveDetector()
 redactor = RedactionEngine()
 
-@app.get("/")
-async def root():
-    return {"message": "SnapSecure AI API is running"}
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy"}
 
 @app.post("/analyze")
 async def analyze_screenshot(request: Request, file: UploadFile = File(...)):
@@ -83,6 +84,43 @@ async def analyze_screenshot(request: Request, file: UploadFile = File(...)):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# Locate the frontend dist folder
+# In Docker, we'll copy it to a known location like /app/frontend/dist
+# Locally, it might be ../frontend/dist relative to backend/
+FRONTEND_DIST = os.path.join(os.path.dirname(BASE_DIR), "frontend", "dist")
+if not os.path.exists(FRONTEND_DIST):
+    # Fallback for Docker structure if different
+    FRONTEND_DIST = "/app/frontend/dist"
+
+if os.path.exists(FRONTEND_DIST):
+    # Mount assets (Vite builds into dist/assets by default)
+    # We mount it to /assets so the frontend requests to /assets/index.js work
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+
+    # Catch-all route for SPA
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        # Allow requests to API endpoints to pass through if they weren't caught above
+        # (Though simple strings wouldn't match specific paths unless defined after)
+        # But @app.get("/") is specific.
+        # Ideally, API routes are defined first (which they are).
+        
+        # If it's a file request that wasn't caught by assets or processed, check if it exists in dist root?
+        # (e.g. favicon.ico)
+        possible_file = os.path.join(FRONTEND_DIST, full_path)
+        if os.path.isfile(possible_file):
+             return FileResponse(possible_file)
+
+        # Otherwise serve index.html
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
+
+@app.get("/")
+async def root():
+    if os.path.exists(FRONTEND_DIST):
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
+    return {"message": "SnapSecure AI API is running"}
+
 
 if __name__ == "__main__":
     import uvicorn

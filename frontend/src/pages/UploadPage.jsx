@@ -41,7 +41,7 @@ function UploadPage() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+        const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8001' : '')
         try {
             const response = await fetch(`${apiUrl}/analyze`, {
                 method: 'POST',

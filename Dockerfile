@@ -31,29 +31,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY backend/ .
-RUN mkdir -p /app/data/uploads /app/data/processed && chown -R user:user /app
-
-WORKDIR /app
-
-# Copy backend requirements and install
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy backend code
-COPY backend/ .
-
-# Copy built frontend assets from the previous stage
-# We place them in /app/frontend/dist explicitly so main.py can find them at /app/frontend/dist
-# Note: main.py expects: os.path.join(os.path.dirname(BASE_DIR), "frontend", "dist") 
-# OR /app/frontend/dist fallback.
-# Since WORKDIR is /app, and we copy backend/ content to /app, BASE_DIR (main.py's dir) is /app.
-# So os.path.dirname(BASE_DIR) is /. 
-# So it checks /frontend/dist. 
-# BUT, we added a fallback in main.py: `if not os.path.exists... FRONTEND_DIST = "/app/frontend/dist"`
-# So we should put it at /app/frontend/dist.
-
-RUN mkdir -p /app/frontend/dist
 COPY --from=build-frontend /app/frontend/dist /app/frontend/dist
+
+# Ensure the user owns everything (including the newly copied frontend files)
+RUN mkdir -p /app/data/uploads /app/data/processed && chown -R user:user /app
 
 # Switch to the "user" user
 USER user
